@@ -10,12 +10,12 @@ import httpx
 import pytest
 from sqlalchemy import select
 
-from argus.config import parse_config
-from argus.core.engine import ArgusEngine
-from argus.core.retry import request_with_retry
-from argus.db.models import Target, VersionRecord, utcnow
-from argus.db.session import Database
-from argus.outputs.app import create_app
+from pipip.config import parse_config
+from pipip.core.engine import PipipEngine
+from pipip.core.retry import request_with_retry
+from pipip.db.models import Target, VersionRecord, utcnow
+from pipip.db.session import Database
+from pipip.outputs.app import create_app
 
 
 @pytest.fixture
@@ -27,7 +27,7 @@ async def dashboard_client(tmp_path: Path) -> AsyncIterator[tuple[httpx.AsyncCli
             "api": {"enabled": True},
             "atom": {"enabled": True},
             "badges": {"enabled": True},
-            "database": {"url": f"sqlite:///{tmp_path / 'argus.db'}"},
+            "database": {"url": f"sqlite:///{tmp_path / 'pipip.db'}"},
             "scheduler": {"default_interval_seconds": 7200, "run_on_start": False},
             "targets": [
                 {
@@ -56,7 +56,7 @@ async def dashboard_client(tmp_path: Path) -> AsyncIterator[tuple[httpx.AsyncCli
     database = Database(settings.database)
     await database.init()
     try:
-        engine = ArgusEngine(settings, database)
+        engine = PipipEngine(settings, database)
         await engine.sync_targets()
         now = utcnow()
         async with database.session() as session:
@@ -71,7 +71,7 @@ async def dashboard_client(tmp_path: Path) -> AsyncIterator[tuple[httpx.AsyncCli
                     ))
                     session.add(VersionRecord(
                         application_id=target.id, version="1.0.0", detected_at=now,
-                        is_current=True, metadata_json={"labels": {"maintainer": "Argus Team"}},
+                        is_current=True, metadata_json={"labels": {"maintainer": "pi-pip! Team"}},
                         release_url="https://hub.docker.com/_/nginx/tags?name=1.0.0",
                     ))
                 target.status = {
@@ -171,7 +171,7 @@ async def test_dashboard_target_details(
     assert detail.text.count('<span class="status status-current">current</span>') == 2
     assert "Target configuration" not in detail.text
     assert "<h2>Metadata</h2>" in detail.text
-    assert '"maintainer": "Argus Team"' in detail.text
+    assert '"maintainer": "pi-pip! Team"' in detail.text
     assert detail.text.count('href="https://hub.docker.com/_/nginx/tags?name=1.0.0"') == 1
     assert "View tag on Docker Hub" in detail.text
     assert "https://hub.docker.com/_/nginx/tags?name=0.9.0" not in detail.text
@@ -365,11 +365,11 @@ async def test_standalone_in_memory_dashboard(metrics_enabled: bool) -> None:
         if metrics_enabled:
             assert metrics.status_code == 200
             assert "version=0.0.4" in metrics.headers["content-type"]
-            assert 'argus_target_enabled{target="nginx",source="docker"} 1' in metrics.text
-            assert "# TYPE argus_http_requests_total counter" in metrics.text
-            assert "# TYPE argus_http_retries_total counter" in metrics.text
-            assert 'argus_http_requests_total{host="metrics-upstream.test"} 1' in metrics.text
-            assert 'argus_http_retries_total{host="metrics-upstream.test"} 1' in metrics.text
+            assert 'pipip_target_enabled{target="nginx",source="docker"} 1' in metrics.text
+            assert "# TYPE pipip_http_requests_total counter" in metrics.text
+            assert "# TYPE pipip_http_retries_total counter" in metrics.text
+            assert 'pipip_http_requests_total{host="metrics-upstream.test"} 1' in metrics.text
+            assert 'pipip_http_retries_total{host="metrics-upstream.test"} 1' in metrics.text
         else:
             assert metrics.status_code == 404
 
@@ -409,7 +409,7 @@ async def test_optional_outputs_are_independent(enabled_output: str | None) -> N
 
 async def test_http_root_path_routes_and_links() -> None:
     settings = parse_config({
-        "http": {"root_path": "/argus/"},
+        "http": {"root_path": "/pipip/"},
         "database": {"url": "sqlite:///:memory:"},
         "scheduler": {"enabled": False},
         "api": {"enabled": True},
@@ -422,22 +422,22 @@ async def test_http_root_path_routes_and_links() -> None:
     async with app.router.lifespan_context(app), httpx.AsyncClient(
         transport=httpx.ASGITransport(app=app), base_url="http://test"
     ) as client:
-        dashboard = await client.get("/argus/")
+        dashboard = await client.get("/pipip/")
         assert dashboard.status_code == 200
         for link in ("app/nginx", "recent", "comparisons", "docs", "feed.atom", "badges"):
-            assert f'href="/argus/{link}"' in dashboard.text
+            assert f'href="/pipip/{link}"' in dashboard.text
         assert (await client.get("/")).status_code == 404
-        assert (await client.get("/argus-extra/")).status_code == 404
-        assert (await client.get("/argus", follow_redirects=True)).status_code == 200
+        assert (await client.get("/pipip-extra/")).status_code == 404
+        assert (await client.get("/pipip", follow_redirects=True)).status_code == 200
         for link in (
             "app/nginx", "recent", "comparisons", "feed.atom", "comparisons.atom",
             "badge/nginx.svg", "metrics",
         ):
-            assert (await client.get(f"/argus/{link}")).status_code == 200
+            assert (await client.get(f"/pipip/{link}")).status_code == 200
             assert (await client.get(f"/{link}")).status_code == 404
-        docs = await client.get("/argus/docs")
-        assert "/argus/openapi.json" in docs.text
-        schema = await client.get("/argus/openapi.json")
-        assert schema.json()["servers"] == [{"url": "/argus"}]
-        assert (await client.get("/argus/health")).status_code == 204
+        docs = await client.get("/pipip/docs")
+        assert "/pipip/openapi.json" in docs.text
+        schema = await client.get("/pipip/openapi.json")
+        assert schema.json()["servers"] == [{"url": "/pipip"}]
+        assert (await client.get("/pipip/health")).status_code == 204
         assert (await client.get("/health")).status_code == 204

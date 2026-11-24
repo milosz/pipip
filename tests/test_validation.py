@@ -4,9 +4,9 @@ from collections.abc import Callable
 
 import pytest
 
-from argus.config import AppConfig, parse_config
-from argus.core.plugins import SOURCES, PluginError
-from argus.validation import validate_settings, validate_warnings
+from pipip.config import AppConfig, parse_config
+from pipip.core.plugins import SOURCES, PluginError
+from pipip.validation import validate_settings, validate_warnings
 
 
 def _docker_settings() -> AppConfig:
@@ -33,7 +33,7 @@ def test_validate_reports_unknown_source(monkeypatch: pytest.MonkeyPatch) -> Non
 
 
 def test_validate_reports_provider_schema_mismatch(monkeypatch: pytest.MonkeyPatch) -> None:
-    from argus.sources.github import GitHubSource
+    from pipip.sources.github import GitHubSource
 
     monkeypatch.setattr(SOURCES, "get", lambda name: GitHubSource)
     assert validate_settings(_docker_settings()) == [
@@ -44,7 +44,7 @@ def test_validate_reports_provider_schema_mismatch(monkeypatch: pytest.MonkeyPat
 def test_validate_reports_init_failure_and_unknown_notifier(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    from argus.sources.docker import DockerSource
+    from pipip.sources.docker import DockerSource
 
     def fail(*args, **kwargs):
         raise ValueError("invalid image configuration")

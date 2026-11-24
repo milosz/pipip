@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from argus.core.utils import parse_iso8601
+from pipip.core.utils import parse_iso8601
 
 
 @pytest.mark.parametrize(

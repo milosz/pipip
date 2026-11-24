@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 
-from argus.config import DockerOptions
-from argus.core.types import ReleaseInfo
-from argus.core.versioning import compare_versions, filter_releases, is_prerelease
+from pipip.config import DockerOptions
+from pipip.core.types import ReleaseInfo
+from pipip.core.versioning import compare_versions, filter_releases, is_prerelease
 
 
 def test_semver_comparison() -> None:

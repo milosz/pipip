@@ -1,21 +1,21 @@
-# Argus
+# pi-pip!
 
-Argus watches for new versions of the software you use. It checks container registries, repositories and package indexes on a schedule, shows the versions it finds on a dashboard, keeps a history in SQLite, and can send notifications through ntfy.
+pi-pip! watches for new versions of the software you use. It checks container registries, repositories and package indexes on a schedule, shows the versions it finds on a dashboard, keeps a history in SQLite, and can send notifications through ntfy.
 
-Development of Argus was assisted by AI coding tools.
+Development of pi-pip! was assisted by AI coding tools.
 
-![Argus dashboard showing monitored targets and their current versions](screenshots/argus-dashboard.png)
+![pi-pip! dashboard showing monitored targets and their current versions](screenshots/pipip-dashboard.png)
 
 <details>
 <summary>More screenshots</summary>
 
-![Recent version changes](screenshots/argus-recent-changes.png)
+![Recent version changes](screenshots/pipip-recent-changes.png)
 
-![Version comparisons across sources](screenshots/argus-version-comparisons.png)
+![Version comparisons across sources](screenshots/pipip-version-comparisons.png)
 
-![Embeddable version badges](screenshots/argus-badges.png)
+![Embeddable version badges](screenshots/pipip-badges.png)
 
-![Interactive Swagger API documentation](screenshots/argus-api.png)
+![Interactive Swagger API documentation](screenshots/pipip-api.png)
 
 </details>
 
@@ -26,23 +26,35 @@ mkdir -p data
 docker compose up -d --build
 ```
 
-Open <http://localhost:8080>. Argus reads `config.yaml` and stores its database in `data/`. The container runs as UID 1000 and needs write access to that directory. To use a different host port, run `ARGUS_HTTP_PORT=9090 docker compose up -d` and open <http://localhost:9090>.
+Open <http://localhost:8080>. pi-pip! reads `config.yaml` and stores its database in `data/`. The container runs as UID 1000 and needs write access to that directory. To use a different host port, run `PIPIP_HTTP_PORT=9090 docker compose up -d` and open <http://localhost:9090>.
 
-You can also run Argus directly with `uv run python -m argus` and Python 3.12 or newer. Set `ARGUS_CONFIG` to load another YAML file.
+You can also run pi-pip! directly with `uv run python -m pipip` and Python 3.12 or newer. Set `PIPIP_CONFIG` to load another YAML file.
+
+### Upgrading from Argus
+
+Stop the existing Argus instance before starting pi-pip! with the same `data/`
+directory. After a clean shutdown, rename `data/argus.db` to `data/pipip.db` to
+carry over your history and notification queue. If SQLite left a `-wal`, `-shm`,
+or `-journal` file alongside the database, rename it with the same basename
+change before starting pi-pip!. Update any explicit `database.url` or
+`PIPIP_DATABASE_URL` that points to the renamed file. Update deployment settings
+that use `ARGUS_*` variables to use `PIPIP_*`, and change references to the Compose
+service from `argus` to `pipip`. Update Prometheus queries to use the `pipip_`
+metric prefix.
 
 ### Remote access
 
-The Compose port listens on loopback. For remote access, put NGINX or HAProxy in front of Argus and let the proxy handle HTTPS and authentication. Argus has no login of its own.
+The Compose port listens on loopback. For remote access, put NGINX or HAProxy in front of pi-pip! and let the proxy handle HTTPS and authentication. pi-pip! has no login of its own.
 
-A proxy on the Docker host can forward to `http://127.0.0.1:8080`. If the proxy runs in Docker, connect both services to a shared private network, forward to `http://argus:8080`, and remove the host port mapping. [NGINX Basic Auth](https://nginx.org/en/docs/http/ngx_http_auth_basic_module.html) · [HAProxy Basic Auth](https://www.haproxy.com/documentation/haproxy-configuration-tutorials/security/authentication/basic-authentication/)
+A proxy on the Docker host can forward to `http://127.0.0.1:8080`. If the proxy runs in Docker, connect both services to a shared private network, forward to `http://pipip:8080`, and remove the host port mapping. [NGINX Basic Auth](https://nginx.org/en/docs/http/ngx_http_auth_basic_module.html) · [HAProxy Basic Auth](https://www.haproxy.com/documentation/haproxy-configuration-tutorials/security/authentication/basic-authentication/)
 
-To serve Argus under a path such as `/argus/`, set `http.root_path: /argus` in
+To serve pi-pip! under a path such as `/pipip/`, set `http.root_path: /pipip` in
 `config.yaml`. If you use a reverse proxy, forward the full request path, including
-`/argus/`. Docker can still check the app at `/health`.
+`/pipip/`. Docker can still check the app at `/health`.
 
 ## Add something to watch
 
-Edit [config.yaml](config.yaml). Each entry under `targets` names a source and tells Argus what to look for. For example, this tracks versioned Valkey images on Docker Hub.
+Edit [config.yaml](config.yaml). Each entry under `targets` names a source and tells pi-pip! what to look for. For example, this tracks versioned Valkey images on Docker Hub.
 
 ```yaml
 targets:
@@ -53,11 +65,11 @@ targets:
       version_regex: '^[0-9]+\.[0-9]+\.[0-9]+$'
 ```
 
-Argus also supports Zot, GitHub, Codeberg, Git tags, APT repositories, Debian releases, PyPI, and npm. Checks run every six hours by default. Use `interval_seconds` to change a target’s schedule and `group` to put related targets together on the dashboard.
+pi-pip! also supports Zot, GitHub, Codeberg, Git tags, APT repositories, Debian releases, PyPI, and npm. Checks run every six hours by default. Use `interval_seconds` to change a target’s schedule and `group` to put related targets together on the dashboard.
 
 Set `enabled: false` to pause a target and keep its history. Removing a target from YAML deletes its version and digest history at the next startup.
 
-After editing `config.yaml`, run `docker compose restart argus`. After changing Compose settings or environment variables passed to the container, run `docker compose up -d`.
+After editing `config.yaml`, run `docker compose restart pipip`. After changing Compose settings or environment variables passed to the container, run `docker compose up -d`.
 
 ### Git tags and SSH
 
@@ -78,13 +90,13 @@ targets:
 The dashboard shows a tag link when `web_url` contains `{tag}`. An existing target's
 link updates on its next check.
 
-For SSH in Docker, add these mounts under the `argus` service's existing `volumes`.
+For SSH in Docker, add these mounts under the `pipip` service's existing `volumes`.
 Use a verified `known_hosts` entry for the Git server. For a non-default SSH port,
 the host entry uses `[hostname]:port`.
 
 ```yaml
-- ./ssh/known_hosts:/home/argus/.ssh/known_hosts:ro
-- ./ssh/id_ed25519:/home/argus/.ssh/id_ed25519:ro
+- ./ssh/known_hosts:/home/pipip/.ssh/known_hosts:ro
+- ./ssh/id_ed25519:/home/pipip/.ssh/id_ed25519:ro
 ```
 
 Mount the key if the repository requires key authentication. Use a dedicated
@@ -93,14 +105,14 @@ mode to `600` and make it readable by the container's runtime UID (1000 by defau
 
 ### Notifications
 
-Enable ntfy under `notifiers.ntfy`. Targets can list `notifiers: [ntfy]` or inherit the enabled channel. Argus retries failed deliveries.
+Enable ntfy under `notifiers.ntfy`. Targets can list `notifiers: [ntfy]` or inherit the enabled channel. pi-pip! retries failed deliveries.
 
-Use `${VAR}` or `${VAR:-default}` in `config.yaml` to read a value from the environment. To enable ntfy through Compose, set `NTFY_ENABLED=true`, `NTFY_SERVER` to your server URL, and `NTFY_TOPIC` to your topic. Argus requires both destination values when ntfy is enabled.
+Use `${VAR}` or `${VAR:-default}` in `config.yaml` to read a value from the environment. To enable ntfy through Compose, set `NTFY_ENABLED=true`, `NTFY_SERVER` to your server URL, and `NTFY_TOPIC` to your topic. pi-pip! requires both destination values when ntfy is enabled.
 
 For ntfy authentication, set `NTFY_TOKEN` or set both `NTFY_USER` and
-`NTFY_PASSWORD`. When both methods are configured, Argus uses the token.
+`NTFY_PASSWORD`. When both methods are configured, pi-pip! uses the token.
 
-Argus tries to deliver notifications after each target check. The scheduler also
+pi-pip! tries to deliver notifications after each target check. The scheduler also
 processes the queue about 10 seconds after startup and then every 60 seconds by
 default. Change `scheduler.notification_dispatch_seconds` to adjust that interval.
 Failed deliveries wait for their retry delay before they become eligible again.
@@ -108,13 +120,13 @@ Failed deliveries wait for their retry delay before they become eligible again.
 #### Inspect and test the notification queue
 
 Run the [queue script](scripts/notification_queue.py) from the repository root. It
-uses the SQLite database from your Argus configuration. To select another existing
+uses the SQLite database from your pi-pip! configuration. To select another existing
 database, pass `--db PATH` before the subcommand.
 
 ```sh
 uv run python -m scripts.notification_queue list
 uv run python -m scripts.notification_queue list --status failed
-uv run python -m scripts.notification_queue --db data/argus.db list
+uv run python -m scripts.notification_queue --db data/pipip.db list
 ```
 
 To test what an update looks like in ntfy, queue a message with the same title and
@@ -130,7 +142,7 @@ uv run python -m scripts.notification_queue add --notifier ntfy \
   --message "v17.0.2 → v17.0.3"
 ```
 
-The running Argus instance delivers queued messages through the selected channel
+The running pi-pip! instance delivers queued messages through the selected channel
 when it is enabled. These examples leave target version history untouched.
 
 ```sh
@@ -169,11 +181,11 @@ a badge elsewhere.
 
 ## History and storage
 
-- `history.retention` sets how many versions Argus keeps and shows **per target**.
+- `history.retention` sets how many versions pi-pip! keeps and shows **per target**.
 - `recent.days` sets how far back **Recent changes** looks.
 - `recent.limit` caps the total entries on **Recent changes**, across all targets.
 
-The SQLite file is `./data/argus.db` locally and `/data/argus.db` inside Docker. Set `database.url: "sqlite:///:memory:"` to keep the history and notification queue in memory until Argus exits.
+The SQLite file is `./data/pipip.db` locally and `/data/pipip.db` inside Docker. Set `database.url: "sqlite:///:memory:"` to keep the history and notification queue in memory until pi-pip! exits.
 
 ## API and Prometheus
 
@@ -191,26 +203,26 @@ Prometheus metrics are disabled by default. To expose `/metrics`, set
 
 Scrape `/metrics` to see whether each target is enabled, whether its last check succeeded, and when it was last checked or changed versions. A zero timestamp means no event has been recorded. Docker uses `/health` to check that SQLite is reachable.
 
-`argus_http_requests_total` and `argus_http_retries_total` count outbound HTTP requests and retry attempts by host since Argus started. To see retries in the last 15 minutes, use `increase(argus_http_retries_total[15m])`.
+`pipip_http_requests_total` and `pipip_http_retries_total` count outbound HTTP requests and retry attempts by host since pi-pip! started. To see retries in the last 15 minutes, use `increase(pipip_http_retries_total[15m])`.
 
 ## Logs
 
-Argus writes text logs by default. To use JSON locally, run
-`ARGUS_LOG_FORMAT=json uv run python -m argus`. In Docker, add
-`ARGUS_LOG_FORMAT: json` to the `argus` service’s `environment` in
+pi-pip! writes text logs by default. To use JSON locally, run
+`PIPIP_LOG_FORMAT=json uv run python -m pipip`. In Docker, add
+`PIPIP_LOG_FORMAT: json` to the `pipip` service’s `environment` in
 [compose.yaml](compose.yaml), then run `docker compose up -d`.
 
-View the output with `docker compose logs -f argus`. Uvicorn uses its own
+View the output with `docker compose logs -f pipip`. Uvicorn uses its own
 log format for server and HTTP access logs.
 
 ## Development
 
-To add a source, implement `SourceProvider` in [argus/sources](argus/sources). For a notification channel, implement `Notifier` in [argus/notifiers](argus/notifiers).
+To add a source, implement `SourceProvider` in [pipip/sources](pipip/sources). For a notification channel, implement `Notifier` in [pipip/notifiers](pipip/notifiers).
 
 ```sh
 uv run --extra dev ruff check .
-uv run --extra dev mypy argus
-uv run --extra dev python -m pytest -q --cov=argus --cov-report=term-missing --cov-fail-under=80
+uv run --extra dev mypy pipip
+uv run --extra dev python -m pytest -q --cov=pipip --cov-report=term-missing --cov-fail-under=80
 uv run --extra dev pip-audit -r requirements.lock
 ```
 

@@ -5,9 +5,9 @@ from datetime import UTC, datetime, tzinfo
 import httpx
 import pytest
 
-from argus.config import RetrySettings
-from argus.core import retry as retry_module
-from argus.core.retry import request_with_retry
+from pipip.config import RetrySettings
+from pipip.core import retry as retry_module
+from pipip.core.retry import request_with_retry
 
 
 def _settings(**kwargs: object) -> RetrySettings:

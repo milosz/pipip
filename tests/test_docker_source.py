@@ -3,10 +3,10 @@ from __future__ import annotations
 import httpx
 import pytest
 
-from argus.config import DockerOptions, parse_config
-from argus.core.versioning import select_latest
-from argus.sources.base import SourceError
-from argus.sources.docker import DockerSource
+from pipip.config import DockerOptions, parse_config
+from pipip.core.versioning import select_latest
+from pipip.sources.base import SourceError
+from pipip.sources.docker import DockerSource
 
 
 @pytest.mark.asyncio

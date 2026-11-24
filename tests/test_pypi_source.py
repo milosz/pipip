@@ -5,9 +5,9 @@ from datetime import UTC, datetime
 import httpx
 import pytest
 
-from argus.config import PyPIOptions, parse_config
-from argus.sources.base import SourceError
-from argus.sources.pypi import PyPISource
+from pipip.config import PyPIOptions, parse_config
+from pipip.sources.base import SourceError
+from pipip.sources.pypi import PyPISource
 
 
 @pytest.mark.asyncio

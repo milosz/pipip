@@ -7,9 +7,9 @@ from unittest.mock import AsyncMock, Mock
 
 import pytest
 
-from argus.config import GitTagOptions, parse_config
-from argus.sources.base import SourceError
-from argus.sources.git_tag import GitTagSource
+from pipip.config import GitTagOptions, parse_config
+from pipip.sources.base import SourceError
+from pipip.sources.git_tag import GitTagSource
 
 
 @pytest.mark.asyncio
@@ -22,7 +22,7 @@ async def test_git_tag_source_runs_ls_remote_and_filters_tags(
         GitTagOptions(url=remote, web_url="https://git.example.test/project/releases/tag/{tag}"),
         parse_config({}),
     )
-    monkeypatch.setattr("argus.sources.git_tag.ensure_url_allowed", AsyncMock())
+    monkeypatch.setattr("pipip.sources.git_tag.ensure_url_allowed", AsyncMock())
     process = SimpleNamespace(
         returncode=returncode,
         communicate=AsyncMock(return_value=(
@@ -31,7 +31,7 @@ async def test_git_tag_source_runs_ls_remote_and_filters_tags(
         )),
     )
     launch = AsyncMock(return_value=process)
-    monkeypatch.setattr("argus.sources.git_tag.asyncio.create_subprocess_exec", launch)
+    monkeypatch.setattr("pipip.sources.git_tag.asyncio.create_subprocess_exec", launch)
 
     if returncode:
         with pytest.raises(SourceError, match="repository unavailable"):
@@ -52,14 +52,14 @@ async def test_git_tag_stops_transport_on_interruption(
     monkeypatch: pytest.MonkeyPatch, interrupted: type[BaseException]
 ) -> None:
     source = GitTagSource(GitTagOptions(url="https://git.example.test/project"), parse_config({}))
-    monkeypatch.setattr("argus.sources.git_tag.ensure_url_allowed", AsyncMock())
+    monkeypatch.setattr("pipip.sources.git_tag.ensure_url_allowed", AsyncMock())
     process = SimpleNamespace(
         pid=42, communicate=AsyncMock(side_effect=[interrupted(), (b"", b"")])
     )
     launch = AsyncMock(return_value=process)
     kill_group = Mock()
-    monkeypatch.setattr("argus.sources.git_tag.asyncio.create_subprocess_exec", launch)
-    monkeypatch.setattr("argus.sources.git_tag.os.killpg", kill_group)
+    monkeypatch.setattr("pipip.sources.git_tag.asyncio.create_subprocess_exec", launch)
+    monkeypatch.setattr("pipip.sources.git_tag.os.killpg", kill_group)
 
     if interrupted is TimeoutError:
         with pytest.raises(SourceError, match="timed out"):
@@ -107,13 +107,13 @@ async def test_git_tag_links(
     monkeypatch: pytest.MonkeyPatch, remote: str, web_url: str | None, expected: str | None
 ) -> None:
     source = GitTagSource(GitTagOptions(url=remote, web_url=web_url), parse_config({}))
-    monkeypatch.setattr("argus.sources.git_tag.ensure_url_allowed", AsyncMock())
+    monkeypatch.setattr("pipip.sources.git_tag.ensure_url_allowed", AsyncMock())
     process = SimpleNamespace(
         returncode=0,
         communicate=AsyncMock(return_value=(b"abc\trefs/tags/v1.2/stable\n", b"")),
     )
     monkeypatch.setattr(
-        "argus.sources.git_tag.asyncio.create_subprocess_exec", AsyncMock(return_value=process)
+        "pipip.sources.git_tag.asyncio.create_subprocess_exec", AsyncMock(return_value=process)
     )
 
     (release,) = await source.list_releases()

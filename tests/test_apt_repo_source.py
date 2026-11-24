@@ -6,9 +6,9 @@ import lzma
 import httpx
 import pytest
 
-from argus.config import AptRepoOptions, parse_config
-from argus.sources.apt_repo import AptRepoSource
-from argus.sources.base import SourceError
+from pipip.config import AptRepoOptions, parse_config
+from pipip.sources.apt_repo import AptRepoSource
+from pipip.sources.base import SourceError
 
 _INDEX = b"""Package: other
 Version: 99

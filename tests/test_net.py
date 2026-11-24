@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from argus.core.net import UrlNotAllowed, ensure_url_allowed
+from pipip.core.net import UrlNotAllowed, ensure_url_allowed
 
 
 @pytest.mark.asyncio

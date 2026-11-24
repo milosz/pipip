@@ -5,9 +5,9 @@ from datetime import UTC, datetime
 import httpx
 import pytest
 
-from argus.config import DebianReleaseOptions, parse_config
-from argus.sources.base import SourceError
-from argus.sources.debian_release import DebianReleaseSource, _parse_date, parse_release_fields
+from pipip.config import DebianReleaseOptions, parse_config
+from pipip.sources.base import SourceError
+from pipip.sources.debian_release import DebianReleaseSource, _parse_date, parse_release_fields
 
 RELEASE = """Origin: Debian
 Label: Debian

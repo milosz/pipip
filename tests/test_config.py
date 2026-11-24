@@ -3,14 +3,14 @@ from __future__ import annotations
 import pytest
 from pydantic import ValidationError
 
-from argus.config import load_config, parse_config
+from pipip.config import load_config, parse_config
 
 
 def test_environment_interpolation(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("ARGUS_TEST_TOKEN", "s3cret")
+    monkeypatch.setenv("PIPIP_TEST_TOKEN", "s3cret")
     settings = parse_config(
         {
-            "sources": {"github": {"token": "${ARGUS_TEST_TOKEN}"}},
+            "sources": {"github": {"token": "${PIPIP_TEST_TOKEN}"}},
             "targets": [
                 {
                     "name": "example",
@@ -42,11 +42,11 @@ def test_duplicate_targets_rejected() -> None:
 
 
 def test_sqlite_url_normalization() -> None:
-    for url in ("sqlite:///./data/argus.db", "sqlite:///:memory:"):
+    for url in ("sqlite:///./data/pipip.db", "sqlite:///:memory:"):
         settings = parse_config({"database": {"url": url}})
         assert settings.database.url == url.replace("sqlite:", "sqlite+aiosqlite:")
     with pytest.raises(ValidationError, match="must use SQLite"):
-        parse_config({"database": {"url": "postgresql://db/argus"}})
+        parse_config({"database": {"url": "postgresql://db/pipip"}})
 
 
 def test_zot_target_requires_registry() -> None:
@@ -94,7 +94,7 @@ def test_database_url_environment_override(
         encoding="utf-8",
     )
     monkeypatch.setenv(
-        "ARGUS_DATABASE_URL", "sqlite+aiosqlite:///:memory:"
+        "PIPIP_DATABASE_URL", "sqlite+aiosqlite:///:memory:"
     )
     settings = load_config(path)
     assert (
@@ -104,6 +104,6 @@ def test_database_url_environment_override(
 
 
 def test_repository_config_is_valid() -> None:
-    from argus.validation import validate_settings
+    from pipip.validation import validate_settings
 
     assert not validate_settings(load_config("config.yaml"))

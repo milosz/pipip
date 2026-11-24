@@ -6,11 +6,11 @@ from pathlib import Path
 
 import pytest
 
-from argus.locking import FileLock, LockError
+from pipip.locking import FileLock, LockError
 
 
 def test_lock_is_exclusive_and_reusable(tmp_path) -> None:  # type: ignore[no-untyped-def]
-    path = tmp_path / "nested" / "argus.lock"
+    path = tmp_path / "nested" / "pipip.lock"
     first = FileLock(path)
     first.acquire()
     try:
@@ -26,13 +26,13 @@ def test_lock_is_exclusive_and_reusable(tmp_path) -> None:  # type: ignore[no-un
 
 
 def test_lock_release_without_acquire_is_noop(tmp_path) -> None:  # type: ignore[no-untyped-def]
-    FileLock(tmp_path / "argus.lock").release()
+    FileLock(tmp_path / "pipip.lock").release()
 
 
 def test_lock_closes_descriptor_if_pid_sync_fails(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    path = tmp_path / "argus.lock"
+    path = tmp_path / "pipip.lock"
     lock = FileLock(path)
     descriptors: list[int] = []
 

@@ -7,11 +7,11 @@ from datetime import timedelta
 import pytest
 from sqlalchemy import select
 
-from argus.config import AppConfig, parse_config
-from argus.core.types import Notification
-from argus.db.models import NotificationOutbox, utcnow
-from argus.db.session import Database
-from argus.notifiers.outbox import Outbox
+from pipip.config import AppConfig, parse_config
+from pipip.core.types import Notification
+from pipip.db.models import NotificationOutbox, utcnow
+from pipip.db.session import Database
+from pipip.notifiers.outbox import Outbox
 
 
 def make_settings() -> AppConfig:

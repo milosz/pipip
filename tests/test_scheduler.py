@@ -5,15 +5,15 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 
-from argus.config import (
+from pipip.config import (
     AppConfig,
     DockerOptions,
     DockerTarget,
     SchedulerSettings,
 )
-from argus.core.engine import ArgusEngine
-from argus.db.session import Database
-from argus.scheduler import ArgusScheduler
+from pipip.core.engine import PipipEngine
+from pipip.db.session import Database
+from pipip.scheduler import PipipScheduler
 
 
 def _settings(*, run_on_start: bool) -> AppConfig:
@@ -39,7 +39,7 @@ async def test_run_on_start_controls_first_check(
 ) -> None:
     settings = _settings(run_on_start=run_on_start)
     database = Database(settings.database)
-    scheduler = ArgusScheduler(settings, ArgusEngine(settings, database))
+    scheduler = PipipScheduler(settings, PipipEngine(settings, database))
     try:
         before = datetime.now(UTC)
         await scheduler.start()
@@ -59,7 +59,7 @@ async def test_disabled_scheduler_still_runs_notification_jobs() -> None:
     settings = _settings(run_on_start=True)
     settings.scheduler.enabled = False
     database = Database(settings.database)
-    scheduler = ArgusScheduler(settings, ArgusEngine(settings, database))
+    scheduler = PipipScheduler(settings, PipipEngine(settings, database))
     try:
         await scheduler.start()
         assert scheduler._scheduler is not None
@@ -77,7 +77,7 @@ async def test_shutdown_waits_for_active_check_cleanup(monkeypatch: pytest.Monke
     settings.database.url = "sqlite+aiosqlite:///:memory:"
     database = Database(settings.database)
     await database.init()
-    engine = ArgusEngine(settings, database)
+    engine = PipipEngine(settings, database)
     started = asyncio.Event()
     cleaning_up = asyncio.Event()
     allow_cleanup = asyncio.Event()
@@ -94,7 +94,7 @@ async def test_shutdown_waits_for_active_check_cleanup(monkeypatch: pytest.Monke
             finished.set()
 
     monkeypatch.setattr(engine, "run_checks", check)
-    scheduler = ArgusScheduler(settings, engine)
+    scheduler = PipipScheduler(settings, engine)
     try:
         await scheduler.start()
         assert scheduler._scheduler is not None

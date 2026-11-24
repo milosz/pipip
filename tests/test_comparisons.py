@@ -3,9 +3,9 @@ from __future__ import annotations
 import pytest
 from pydantic import ValidationError
 
-from argus.config import ComparisonConfig, parse_config
-from argus.core.comparisons import build_comparison_results
-from argus.db.models import Target
+from pipip.config import ComparisonConfig, parse_config
+from pipip.core.comparisons import build_comparison_results
+from pipip.db.models import Target
 
 
 @pytest.mark.parametrize(

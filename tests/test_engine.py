@@ -5,22 +5,22 @@ from pathlib import Path
 import pytest
 from sqlalchemy import func, select
 
-from argus.config import (
+from pipip.config import (
     AppConfig,
     DatabaseSettings,
     DockerOptions,
     DockerTarget,
     HistorySettings,
 )
-from argus.core.engine import ArgusEngine, TargetNotFound
-from argus.core.types import Notification, ReleaseInfo
-from argus.db.models import (
+from pipip.core.engine import PipipEngine, TargetNotFound
+from pipip.core.types import Notification, ReleaseInfo
+from pipip.db.models import (
     NotificationOutbox,
     Target,
     VersionDigestHistory,
     VersionRecord,
 )
-from argus.db.session import Database
+from pipip.db.session import Database
 
 
 def make_settings(*, retention: int = 200) -> AppConfig:
@@ -49,7 +49,7 @@ async def test_engine_records_version_history(monkeypatch: pytest.MonkeyPatch) -
     database = Database(settings.database)
     await database.init()
     try:
-        engine = ArgusEngine(settings, database)
+        engine = PipipEngine(settings, database)
         await engine.sync_targets()
 
         async def unexpected_sync() -> int:
@@ -136,7 +136,7 @@ async def test_engine_records_a_return_to_an_earlier_version(
     database = Database(settings.database)
     await database.init()
     try:
-        engine = ArgusEngine(settings, database)
+        engine = PipipEngine(settings, database)
         await engine.sync_targets()
         versions = iter(("1.0.0", "2.0.0", "1.0.0", "1.0.0"))
         sent: list[tuple[str | None, str]] = []
@@ -181,7 +181,7 @@ async def test_engine_marks_errors() -> None:
     database = Database(settings.database)
     await database.init()
     try:
-        engine = ArgusEngine(settings, database)
+        engine = PipipEngine(settings, database)
         await engine.sync_targets()
 
         class BrokenSource:
@@ -210,7 +210,7 @@ async def test_sync_targets_resets_legacy_removed_status() -> None:
     database = Database(settings.database)
     await database.init()
     try:
-        engine = ArgusEngine(settings, database)
+        engine = PipipEngine(settings, database)
         await engine.sync_targets()
         async with database.session() as session:
             session.add(
@@ -249,7 +249,7 @@ async def test_sync_targets_deletes_removed_target_history() -> None:
     database = Database(settings.database)
     await database.init()
     try:
-        engine = ArgusEngine(settings, database)
+        engine = PipipEngine(settings, database)
         await engine.sync_targets()
         async with database.session() as session:
             gone = Target(
@@ -309,7 +309,7 @@ async def test_engine_prunes_history_beyond_retention() -> None:
     database = Database(settings.database)
     await database.init()
     try:
-        engine = ArgusEngine(settings, database)
+        engine = PipipEngine(settings, database)
         await engine.sync_targets()
         versions = iter(["1.0.0", "1.1.0", "1.2.0"])
 
@@ -343,7 +343,7 @@ async def test_engine_notifies_on_digest_change() -> None:
     database = Database(settings.database)
     await database.init()
     try:
-        engine = ArgusEngine(settings, database)
+        engine = PipipEngine(settings, database)
         await engine.sync_targets()
         settings.targets[0].notifiers = ["ntfy"]
         digests = iter(["a" * 64, "b" * 64])
@@ -414,7 +414,7 @@ async def test_prune_keeps_other_apps_digest_history() -> None:
     database = Database(settings.database)
     await database.init()
     try:
-        engine = ArgusEngine(settings, database)
+        engine = PipipEngine(settings, database)
         await engine.sync_targets()
         calls = {"example": 0}
 
@@ -456,7 +456,7 @@ async def test_prune_keeps_other_apps_digest_history() -> None:
 async def test_pending_outbox_survives_engine_restart(tmp_path: Path) -> None:
     settings = make_settings()
     settings.targets[0].notifiers = ["ntfy"]
-    settings.database.url = f"sqlite+aiosqlite:///{tmp_path / 'argus.db'}"
+    settings.database.url = f"sqlite+aiosqlite:///{tmp_path / 'pipip.db'}"
     database = Database(settings.database)
     await database.init()
     try:
@@ -473,7 +473,7 @@ async def test_pending_outbox_survives_engine_restart(tmp_path: Path) -> None:
             async def send(self, notification: Notification) -> None:
                 self.sent.append(notification)
 
-        first_engine = ArgusEngine(settings, database)
+        first_engine = PipipEngine(settings, database)
         await first_engine.sync_targets()
         first_engine._make_source = lambda target: FakeSource()  # type: ignore[method-assign]
         first_engine.outbox._get_notifier = lambda name: FakeNotifier()  # type: ignore[method-assign]
@@ -501,7 +501,7 @@ async def test_pending_outbox_survives_engine_restart(tmp_path: Path) -> None:
         database = Database(settings.database)
         await database.init()
         notifier = FakeNotifier()
-        second_engine = ArgusEngine(settings, database)
+        second_engine = PipipEngine(settings, database)
         second_engine.outbox._get_notifier = lambda name: notifier  # type: ignore[method-assign]
         processed = await second_engine.outbox.dispatch()
 

@@ -11,11 +11,11 @@ from uuid import uuid4
 from sqlalchemy import delete, select
 from sqlalchemy.exc import SQLAlchemyError
 
-from argus.config import ConfigError, DatabaseSettings, load_config
-from argus.core.types import Notification
-from argus.db.models import NotificationOutbox
-from argus.db.session import Database
-from argus.outputs.presentation import format_timestamp
+from pipip.config import ConfigError, DatabaseSettings, load_config
+from pipip.core.types import Notification
+from pipip.db.models import NotificationOutbox
+from pipip.db.session import Database
+from pipip.outputs.presentation import format_timestamp
 
 _STATUSES = ("pending", "failed", "sent", "dead")
 
@@ -24,17 +24,17 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     database = parser.add_mutually_exclusive_group()
     database.add_argument("--config", type=Path, help="Read the database URL from this YAML file")
-    database.add_argument("--db", type=Path, help="Path to an existing Argus SQLite database")
+    database.add_argument("--db", type=Path, help="Path to an existing pi-pip! SQLite database")
 
     commands = parser.add_subparsers(dest="command", required=True)
     show = commands.add_parser("list", help="Show queue entries, newest first")
     show.add_argument("--status", choices=_STATUSES)
 
-    add = commands.add_parser("add", help="Queue a test notification for the running Argus")
+    add = commands.add_parser("add", help="Queue a test notification for the running pi-pip!")
     add.add_argument("--notifier", choices=("ntfy",), default="ntfy")
-    add.add_argument("--title", default="Argus notification test")
-    add.add_argument("--message", default="Test notification from the Argus queue.")
-    add.add_argument("--target", default="argus-test", help="Name associated with the queue entry")
+    add.add_argument("--title", default="pi-pip! notification test")
+    add.add_argument("--message", default="Test notification from the pi-pip! queue.")
+    add.add_argument("--target", default="pipip-test", help="Name associated with the queue entry")
 
     clear = commands.add_parser("clear", help="Delete queue entries")
     clear.add_argument("--status", choices=_STATUSES, help="Delete only entries with this status")

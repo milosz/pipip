@@ -5,10 +5,10 @@ from datetime import UTC, datetime
 import httpx
 import pytest
 
-from argus.config import CodebergOptions, GitHubOptions, parse_config
-from argus.sources.base import SourceError
-from argus.sources.codeberg import CodebergSource
-from argus.sources.github import GitHubSource
+from pipip.config import CodebergOptions, GitHubOptions, parse_config
+from pipip.sources.base import SourceError
+from pipip.sources.codeberg import CodebergSource
+from pipip.sources.github import GitHubSource
 
 
 @pytest.mark.asyncio

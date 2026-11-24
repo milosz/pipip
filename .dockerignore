@@ -1,7 +1,7 @@
 # Build context contains only the inputs copied by Dockerfile.
 **
-!argus/
-!argus/**
+!pipip/
+!pipip/**
 !pyproject.toml
 !README.md
 !requirements.lock
