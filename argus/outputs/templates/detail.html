@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+
+{% block heading %} · {{ app.name }}{% endblock %}
+{% block subtitle %}{{ app.source }} · <span class="status status-{{ app.status }}">{{ status_label(app.status) }}</span>{% endblock %}
+{% block footer %}Target details{% endblock %}
+
+{% block content %}
+<section class="detail-grid">
+  <div class="card card-current">
+    <span class="label">Current version</span>
+    <strong>{% if app.current_version %}<code>{{ app.current_version }}</code>{% else %}—{% endif %}</strong>
+    {% if release_link %}
+    {% set href, label = release_link %}
+    <a class="release-link" href="{{ href }}" target="_blank" rel="noopener noreferrer">{{ label }} ↗</a>
+    {% endif %}
+  </div>
+  <div class="card card-previous">
+    <span class="label">Previous version</span>
+    <strong>{% if app.previous_version %}<code>{{ app.previous_version }}</code>{% else %}—{% endif %}</strong>
+  </div>
+  <div class="card card-check">
+    <span class="label">Last check</span>
+    <strong>{{ fmt_dt(app.last_checked_at) }}</strong>
+  </div>
+  <div class="card card-change">
+    <span class="label">Last change</span>
+    <strong>{{ fmt_dt(app.last_changed_at) }}</strong>
+  </div>
+  {% if not app.enabled %}
+  <div class="card card-disabled">
+    <span class="label">Enabled</span>
+    <strong>no</strong>
+  </div>
+  {% endif %}
+  <div class="card card-source">
+    <span class="label">Source</span>
+    <strong>{{ app.source }}</strong>
+  </div>
+</section>
+
+{% if app.last_error %}
+<article class="error-box">
+  <header><strong>Last error</strong></header>
+  <pre>{{ app.last_error }}</pre>
+</article>
+{% endif %}
+
+<div class="table-cards">
+<section class="table-card">
+  <header class="table-card-header">
+    <h2>Version history</h2>
+  </header>
+  {% if history %}
+  {% set is_apt = app.source == "apt_repo" %}
+  <table role="grid">
+    <thead>
+      <tr>
+        <th scope="col">Version</th>
+        <th scope="col">Detected</th>
+        {% if not is_apt %}<th scope="col">Published</th>{% endif %}
+        <th scope="col">Current</th>
+        {% if not is_apt %}
+        <th scope="col">Digest</th>
+        {% endif %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for record in history %}
+      <tr>
+        <th scope="row"><code>{{ record.version }}</code></th>
+        <td>{{ fmt_dt(record.detected_at) }}</td>
+        {% if not is_apt %}<td>{{ fmt_dt(record.published_at) }}</td>{% endif %}
+        <td>{% if record.is_current %}<span class="status status-current">current</span>{% else %}<span class="muted">—</span>{% endif %}</td>
+        {% if not is_apt %}
+        <td>
+          {% if record.digest %}
+            <code title="{{ record.digest }}">{{ record.digest[:20] }}{% if record.digest|length > 20 %}…{% endif %}</code>
+          {% else %}
+            <span class="muted">—</span>
+          {% endif %}
+        </td>
+        {% endif %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="muted detail-card-content">No version history yet.</p>
+  {% endif %}
+</section>
+
+{% if digest_history %}
+<section class="table-card">
+  <header class="table-card-header">
+    <h2>Digest history</h2>
+  </header>
+  <table role="grid">
+    <thead>
+      <tr>
+        <th scope="col">Version</th>
+        <th scope="col">Detected</th>
+        <th scope="col">Previous digest</th>
+        <th scope="col">Digest</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for record in digest_history %}
+      <tr>
+        <th scope="row"><code>{{ record.version }}</code></th>
+        <td>{{ fmt_dt(record.detected_at) }}</td>
+        <td>
+          {% if record.previous_digest %}
+            <code title="{{ record.previous_digest }}">{{ record.previous_digest[:16] }}…</code>
+          {% else %}
+            <span class="muted">initial</span>
+          {% endif %}
+        </td>
+        <td><code title="{{ record.digest }}">{{ record.digest[:20] }}{% if record.digest|length > 20 %}…{% endif %}</code></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endif %}
+
+
+{% macro metadata_fields(record) %}
+<dl class="metadata-list">
+  {% for key, value in record.metadata_json.items() %}
+  <dt>{{ key }}</dt>
+  <dd>
+    {% if value is string or value is number %}
+      <code>{{ value }}</code>
+    {% else %}
+      <pre>{{ value | tojson(indent=2) }}</pre>
+    {% endif %}
+  </dd>
+  {% endfor %}
+</dl>
+{% endmacro %}
+
+{% set metadata_records = history | selectattr("metadata_json") | list %}
+{% if metadata_records %}
+<section class="table-card">
+  <header class="table-card-header">
+    <h2>Metadata</h2>
+  </header>
+  <div class="detail-card-content">
+  {% for record in metadata_records %}
+  {% if record.is_current %}
+  <div class="metadata-card">
+    <div class="metadata-head">
+      <span class="label">Version</span>
+      <strong><code>{{ record.version }}</code> <span class="status status-current">current</span></strong>
+    </div>
+    {{ metadata_fields(record) }}
+  </div>
+  {% else %}
+  <details class="metadata-card">
+    <summary><strong><code>{{ record.version }}</code></strong></summary>
+    {{ metadata_fields(record) }}
+  </details>
+  {% endif %}
+  {% endfor %}
+  </div>
+</section>
+{% endif %}
+</div>
+{% endblock %}

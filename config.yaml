@@ -1,0 +1,192 @@
+# Argus example configuration.
+# Values of the form ${VAR:-default} are expanded from environment variables.
+# Commented settings show defaults unless noted otherwise.
+
+name: Argus
+
+database:
+  url: sqlite:///${ARGUS_DATA_DIR:-./data}/argus.db
+  # url: "sqlite:///:memory:"  # Store data in memory.
+
+# retry:
+#   attempts: 3
+#   backoff_seconds: 5
+#   max_backoff_seconds: 300
+#   retry_statuses: [429, 500, 502, 503, 504]
+
+scheduler:
+  max_concurrency: 2
+  # enabled: true
+  # timezone: UTC
+  # default_interval_seconds: 21600  # 6 hours
+  # jitter_seconds: 30
+  # run_on_start: true
+  # notification_dispatch_seconds: 60
+  # outbox_purge_hours: 24
+
+http:
+  port: ${ARGUS_HTTP_PORT:-8080}
+  # host: 0.0.0.0
+  # root_path: ""
+  # access_log: false
+
+# security:
+#   allow_private_networks: false
+
+dashboard:
+  refresh_seconds: 180
+
+# history:
+#   retention: 200  # Max versions stored and shown per target.
+
+recent:
+  days: 30  # Time window at /recent.
+  limit: 50  # Max entries across all targets at /recent.
+
+api:
+  enabled: true
+
+atom:
+  enabled: true
+  # targets: all
+  # limit: 50
+
+metrics:
+  enabled: false  # Enable the Prometheus endpoint at /metrics.
+
+badges:
+  enabled: true
+  # targets: all
+
+sources:
+  github:
+    token: ${GITHUB_TOKEN:-}
+    # api_url: https://api.github.com
+    # timeout_seconds: 30
+  codeberg:
+    token: ${CODEBERG_TOKEN:-}
+    # base_url: https://codeberg.org
+    # timeout_seconds: 30
+  # docker:
+  #   timeout_seconds: 30
+  # zot:
+  #   timeout_seconds: 30
+  # git_tag:
+  #   timeout_seconds: 30
+  # apt_repo:
+  #   timeout_seconds: 30
+  # debian_release:
+  #   timeout_seconds: 30
+
+notifiers:
+  # notify_on_initial: false
+  # max_attempts: 5
+  # retry_backoff_seconds: 60
+  # outbox_retention_days: 30
+  ntfy:
+    enabled: ${NTFY_ENABLED:-false}
+    server: ${NTFY_SERVER:-}
+    topic: ${NTFY_TOPIC:-}
+    token: ${NTFY_TOKEN:-}
+    username: ${NTFY_USER:-}
+    password: ${NTFY_PASSWORD:-}
+    # priority: default
+    # timeout_seconds: 15
+
+targets:
+  - name: valkey-git
+    source: git_tag
+    group: Valkey
+    hide_in_dashboard: true
+    interval_seconds: 43200
+    notifiers: [ntfy]
+    options:
+      url: https://github.com/valkey-io/valkey.git
+      web_url: "https://github.com/valkey-io/valkey/tree/{tag}"
+      version_regex: '^[0-9]+\.[0-9]+\.[0-9]+$'
+
+  - name: valkey-docker
+    source: docker
+    group: Valkey
+    hide_in_dashboard: true
+    interval_seconds: 43200
+    notifiers: [ntfy]
+    options:
+      image: valkey/valkey
+      version_regex: '^[0-9]+\.[0-9]+\.[0-9]+$'
+
+  - name: valkey-debian-trixie
+    source: apt_repo
+    group: Valkey
+    hide_in_dashboard: true
+    interval_seconds: 43200
+    notifiers: [ntfy]
+    options:
+      package: valkey-server
+      base_url: https://deb.debian.org/debian
+      suite: trixie
+
+  - name: debian-stable
+    source: debian_release
+    group: Debian
+    notifiers: [ntfy]
+    options: {}
+
+  - name: fastapi
+    source: pypi
+    group: Packages
+    notifiers: [ntfy]
+    options:
+      package: fastapi
+
+  - name: forgejo
+    source: codeberg
+    group: Forgejo
+    notifiers: [ntfy]
+    options:
+      repo: forgejo/forgejo
+
+  - name: forgejo-runner
+    source: codeberg
+    group: Forgejo
+    notifiers: [ntfy]
+    options:
+      repo: forgejo/runner
+      base_url: https://code.forgejo.org
+
+  - name: forgejo-docker
+    source: docker
+    group: Forgejo
+    hide_in_dashboard: true
+    notifiers: [ntfy]
+    options:
+      image: codeberg.org/forgejo/forgejo
+      version_regex: '^v?[0-9]+\.[0-9]+\.[0-9]+$'
+
+  - name: forgejo-runner-docker
+    source: docker
+    group: Forgejo
+    hide_in_dashboard: true
+    notifiers: [ntfy]
+    options:
+      image: data.forgejo.org/forgejo/runner
+      version_regex: '^v?[0-9]+\.[0-9]+\.[0-9]+$'
+
+comparisons:
+  - name: valkey-channels
+    reference: valkey-git
+    targets: [valkey-docker, valkey-debian-trixie]
+    mode: semver
+    description: Docker Hub and Debian 13 (Trixie) versions compared with upstream Git tags
+
+  - name: forgejo-channels
+    reference: forgejo
+    targets: [forgejo-docker]
+    mode: semver
+    description: Forgejo container image compared with the upstream release
+
+  - name: forgejo-runner-channels
+    reference: forgejo-runner
+    targets: [forgejo-runner-docker]
+    mode: semver
+    description: Forgejo Runner container image compared with the upstream release

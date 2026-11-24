@@ -1,0 +1,27 @@
+services:
+  argus:
+    build: .
+    image: argus:latest
+    restart: unless-stopped
+    init: true
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    ports:
+      - "127.0.0.1:${ARGUS_HTTP_PORT:-8080}:8080"
+    environment:
+      GITHUB_TOKEN: "${GITHUB_TOKEN:-}"
+      CODEBERG_TOKEN: "${CODEBERG_TOKEN:-}"
+      NTFY_ENABLED: "${NTFY_ENABLED:-false}"
+      NTFY_SERVER: "${NTFY_SERVER:-}"
+      NTFY_TOPIC: "${NTFY_TOPIC:-}"
+      NTFY_USER: "${NTFY_USER:-}"
+      NTFY_PASSWORD: "${NTFY_PASSWORD:-}"
+      NTFY_TOKEN: "${NTFY_TOKEN:-}"
+    volumes:
+      - ./config.yaml:/config/config.yaml:ro
+      - ./data:/data

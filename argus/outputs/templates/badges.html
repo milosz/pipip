@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block heading %} · Badges{% endblock %}
+{% block subtitle %}Latest versions reported by monitored sources{% endblock %}
+{% block footer %}Version badges{% endblock %}
+
+{% block content %}
+{% if apps %}
+<div class="table-card">
+  <table class="badge-table">
+    <thead>
+      <tr>
+        <th scope="col">Badge</th>
+        <th scope="col">Source</th>
+        <th scope="col">Last check</th>
+        <th scope="col">Last version change</th>
+        <th scope="col">Markdown</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for app in apps %}
+      {% set badge_url = url_for('version_badge', target=app.name) %}
+      {% set detail = source_detail(app) %}
+      <tr>
+        <th scope="row">
+          <a href="{{ badge_url }}"><img src="{{ badge_url }}" alt="{{ app.name }} version"></a>
+        </th>
+        <td>{{ source_label(app) }}{% if detail %}<br><small>{{ detail }}</small>{% endif %}</td>
+        <td>
+          {{ fmt_dt(app.last_checked_at) }}<br>
+          <span class="status status-{{ app.status }}">{{ status_label(app.status) }}</span>
+        </td>
+        <td>{{ fmt_dt(app.last_changed_at) }}</td>
+        <td><code>![{{ app.name }} version]({{ badge_url }})</code></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<p>No badges available.</p>
+{% endif %}
+{% endblock %}

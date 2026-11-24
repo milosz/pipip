@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block head %}
+<meta http-equiv="refresh" content="{{ refresh_seconds }}">
+{% endblock %}
+{% block heading %} · Recent changes{% endblock %}
+
+{% block content %}
+{% if recent_changes %}
+<p class="header-sub">Up to {{ recent_changes_limit }} entries from the last {{ recent_changes_days }} days · UTC</p>
+{% for day, events in recent_changes.items() %}
+<section>
+  <h2 class="recent-date"><time datetime="{{ day.isoformat() }}">{{ day.strftime("%d %b %Y") }}</time></h2>
+  <ul class="recent-changes-list">
+    {% for event in events %}
+    <li>
+      <time class="muted" datetime="{{ event.detected_at.isoformat() }}"
+            title="{{ fmt_dt(event.detected_at) }}">{{ event.detected_at.strftime("%H:%M") }}</time>
+      <div>
+        <a href="{{ url_for('app_detail', name=event.target).path }}">{{ event.target }}</a>
+        <span class="recent-version">
+          {% if event.previous_version %}<code>{{ event.previous_version }}</code> → {% endif %}
+          <code>{{ event.version }}</code>
+        </span>
+      </div>
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endfor %}
+{% else %}
+<p>No version changes in the last {{ recent_changes_days }} days.</p>
+{% endif %}
+{% endblock %}

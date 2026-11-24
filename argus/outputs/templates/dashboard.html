@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block head %}
+{% if atom_enabled %}
+<link rel="alternate" type="application/atom+xml" href="{{ url_for('atom_feed').path }}">
+{% endif %}
+<meta http-equiv="refresh" content="{{ refresh_seconds }}">
+{% endblock %}
+
+{% block footer_extra %}
+{% if atom_enabled %}
+<a class="feed-link" href="{{ url_for('atom_feed').path }}" aria-label="Atom feed" title="Atom feed">
+  <span class="feed-icon" aria-hidden="true"></span>
+</a>
+{% endif %}
+{% endblock %}
+
+{% block header_extra %}
+<nav class="header-extra detail-links" aria-label="Release views">
+  <a href="{{ url_for('recent_changes_page').path }}">Recent changes</a>
+{% if api_enabled %}
+  <a href="{{ url_for('swagger').path }}">API docs</a>
+{% endif %}
+  <a href="{{ url_for('comparisons_page').path }}">Comparisons</a>
+{% if badges_enabled %}
+  <a href="{{ url_for('badge_catalog').path }}">Badges</a>
+{% endif %}
+</nav>
+{% endblock %}
+
+{% block content %}
+{% include "_table.html" %}
+{% endblock %}

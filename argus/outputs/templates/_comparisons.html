@@ -1,0 +1,40 @@
+{% for comparison in reference_results %}
+<article class="table-card" id="comparison-{{ comparison.name }}">
+  <header class="table-card-header">
+    <div>
+      <h2>{{ comparison.name }}</h2>
+      {% if comparison.description %}<p class="header-sub">{{ comparison.description }}</p>{% endif %}
+    </div>
+    <div class="comparison-summary">
+      <div class="comparison-status">
+        <span class="status status-{{ comparison.status }}">{{ status_label(comparison.status) }}</span>
+        <span class="muted">{{ comparison.matched }} of {{ comparison.targets | length }} match</span>
+      </div>
+      <p class="header-sub" title="Most recent check of the reference or any compared target">
+        Latest check · {{ fmt_dt(latest_checks[comparison.name]) }}
+      </p>
+    </div>
+  </header>
+  <table class="comparison-table">
+    <thead>
+      <tr><th scope="col">Target</th><th scope="col">Version</th><th scope="col">Relative to reference</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <th scope="row">{{ comparison.reference }}</th>
+        <td><code>{{ comparison.reference_version or "—" }}</code></td>
+        <td>Reference</td>
+      </tr>
+      {% for target in comparison.targets %}
+      <tr>
+        <th scope="row">{{ target.name }}</th>
+        <td><code>{{ target.version or "—" }}</code></td>
+        <td><span class="status status-{{ target.status }}">{{ status_label(target.status) }}</span></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</article>
+{% else %}
+<p class="muted">No comparisons available.</p>
+{% endfor %}

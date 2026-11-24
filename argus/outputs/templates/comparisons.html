@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block head %}
+{% if atom_enabled %}
+<link rel="alternate" type="application/atom+xml" href="{{ url_for('comparisons_feed').path }}">
+{% endif %}
+<meta http-equiv="refresh" content="{{ refresh_seconds }}">
+{% endblock %}
+{% block heading %} · Version comparisons{% endblock %}
+{% block subtitle %}Versions compared with configured references{% endblock %}
+
+{% block content %}
+<div class="summary">
+  <div class="card card-targets"><span class="muted">Comparisons</span><strong>{{ reference_results | length }}</strong></div>
+  <div class="card card-ok"><span class="muted">Match</span><strong>{{ comparison_counts.get("match", 0) }}</strong></div>
+  <div class="card card-error"><span class="muted">Drift</span><strong>{{ comparison_counts.get("drift", 0) }}</strong></div>
+  <div class="card card-warning"><span class="muted">Missing</span><strong>{{ comparison_counts.get("missing", 0) }}</strong></div>
+</div>
+<section class="table-cards">
+  {% include "_comparisons.html" %}
+</section>
+{% endblock %}
+
+{% block footer_extra %}
+{% if atom_enabled %}
+<a class="feed-link" href="{{ url_for('comparisons_feed').path }}"
+   aria-label="Comparisons Atom feed" title="Comparisons Atom feed">
+  <span class="feed-icon" aria-hidden="true"></span>
+</a>
+{% endif %}
+{% endblock %}

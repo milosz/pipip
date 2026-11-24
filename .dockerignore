@@ -1,0 +1,12 @@
+# Build context contains only the inputs copied by Dockerfile.
+**
+!argus/
+!argus/**
+!pyproject.toml
+!README.md
+!requirements.lock
+!requirements-build.lock
+
+# Local Python artifacts inside the source tree.
+**/__pycache__/
+**/*.py[cod]

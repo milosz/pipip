@@ -1,0 +1,90 @@
+<div class="summary">
+  <div class="card card-targets"><span class="muted">Targets</span><strong>{{ total }}</strong></div>
+  <div class="card card-ok"><span class="muted">OK</span><strong>{{ counts.get("ok", 0) }}</strong></div>
+  <div class="card card-error"><span class="muted">Errors</span><strong>{{ counts.get("error", 0) }}</strong></div>
+  <div class="card card-warning"><span class="muted">No release</span><strong>{{ counts.get("no_release", 0) }}</strong></div>
+  <div class="card card-pending"><span class="muted">Pending</span><strong>{{ counts.get("pending", 0) }}</strong></div>
+  <div class="card last-refresh"><span class="muted">Last refresh</span><strong>{{ fmt_dt(now) }}</strong></div>
+</div>
+
+{% macro app_table(items) %}
+<table role="grid" class="app-table">
+  <colgroup>
+    <col style="width: 24%">
+    <col style="width: 14%">
+    <col style="width: 19%">
+    <col style="width: 19%">
+    <col style="width: 24%">
+  </colgroup>
+  <thead>
+    <tr>
+      <th scope="col">Application</th>
+      <th scope="col">Current</th>
+      <th scope="col">Last check</th>
+      <th scope="col">Last change</th>
+      <th scope="col" aria-label="Check details"></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for app in items %}
+    <tr>
+      <th scope="row">
+        <a href="{{ url_for('app_detail', name=app.name).path }}">{{ app.name }}</a><br>
+        <small>{{ app.source }}{% if not app.enabled %} · disabled{% endif %}</small>
+      </th>
+      <td>{% if app.current_version %}<code>{{ app.current_version }}</code>{% else %}<span class="muted">—</span>{% endif %}</td>
+      <td>{{ fmt_dt(app.last_checked_at) }}</td>
+      <td>{{ fmt_dt(app.last_changed_at) }}</td>
+      <td>
+        {% if app.last_error %}
+          <small class="error-text" title="{{ app.last_error }}">{{ app.last_error[:100] }}{% if app.last_error|length > 100 %}…{% endif %}</small>
+        {% elif attention_reasons.get(app.name) %}
+          <small class="muted">{{ attention_reasons[app.name] }}</small>
+        {% else %}
+          <span class="muted">—</span>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endmacro %}
+
+<nav class="target-filters" aria-label="Target filters">
+  <div class="target-filter-group">
+    <a href="{{ dashboard_url }}{% if updated %}?updated={{ updated }}{% endif %}"{% if not attention %} aria-current="page"{% endif %}>All targets</a>
+    <a href="{{ dashboard_url }}?attention=true"{% if attention %} aria-current="page"{% endif %}>
+      Needs attention ({{ attention_reasons | length }})
+    </a>
+  </div>
+  {% if not attention %}
+  <div class="target-filter-group">
+    <span class="muted">Version change</span>
+    <a href="{{ dashboard_url }}"{% if not updated %} aria-current="page"{% endif %}>Any time</a>
+    {% for window, (_, label) in updated_windows.items() %}
+    <a href="{{ dashboard_url }}?updated={{ window }}"{% if updated == window %} aria-current="page"{% endif %}>{{ label }}</a>
+    {% endfor %}
+  </div>
+  {% endif %}
+</nav>
+
+{% if apps %}
+<div class="table-cards">
+  {% for group, items in app_groups.items() %}
+  <section class="table-card">
+    {% if group != "Ungrouped" or app_groups | length > 1 %}
+    <header class="table-card-header">
+      <h2 class="group-title">{{ group }}</h2>
+    </header>
+    {% endif %}
+    {{ app_table(items) }}
+  </section>
+  {% endfor %}
+</div>
+{% elif updated %}
+<p class="muted">No targets match these filters.</p>
+{% elif attention %}
+<p class="muted">No targets need attention.</p>
+{% else %}
+<p class="muted">No targets are visible on the dashboard.</p>
+{% endif %}
